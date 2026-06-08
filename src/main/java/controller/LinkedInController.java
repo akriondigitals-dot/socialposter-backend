@@ -81,7 +81,7 @@ public class LinkedInController {
             fetchLinkedInUserId();
 
             // Temporary browser test redirect
-            response.sendRedirect("https://socialposter-backend.onrender.com/api/posts");
+            response.sendRedirect("akrion://linkedin-success");
 
         } catch (Exception e) {
             e.printStackTrace();
