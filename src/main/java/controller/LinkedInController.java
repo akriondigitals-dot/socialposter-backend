@@ -51,14 +51,43 @@ public class LinkedInController {
     @GetMapping("/api/linkedin/callback")
     public void linkedInCallback(
             @RequestParam(required = false) String code,
+            @RequestParam(required = false) String error,
+            @RequestParam(required = false, name = "error_description") String errorDescription,
             HttpServletResponse response) throws IOException {
 
-        System.out.println("LinkedIn Code: " + code);
+        if (error != null) {
+            System.out.println("LinkedIn OAuth Error: " + error);
+            System.out.println("LinkedIn OAuth Error Description: " + errorDescription);
+            response.sendError(
+                    HttpServletResponse.SC_BAD_REQUEST,
+                    "LinkedIn OAuth error: " + error + " - " + errorDescription
+            );
+            return;
+        }
 
-        exchangeCodeForAccessToken(code);
-        fetchLinkedInUserId();
+        if (code == null || code.trim().isEmpty()) {
+            response.sendError(
+                    HttpServletResponse.SC_BAD_REQUEST,
+                    "Missing LinkedIn authorization code"
+            );
+            return;
+        }
 
-        response.sendRedirect("akrion://linkedin-success");
+        try {
+            System.out.println("LinkedIn Code: " + code);
+
+            exchangeCodeForAccessToken(code);
+            fetchLinkedInUserId();
+
+            response.sendRedirect("akrion://linkedin-success");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.sendError(
+                    HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                    "LinkedIn connection failed: " + e.getMessage()
+            );
+        }
     }
 
     @ResponseBody
@@ -71,6 +100,7 @@ public class LinkedInController {
 
         } catch (HttpClientErrorException e) {
             return ResponseEntity.status(e.getStatusCode()).body(e.getResponseBodyAsString());
+
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
@@ -110,14 +140,12 @@ public class LinkedInController {
             return ResponseEntity.ok("Posted image to LinkedIn successfully");
 
         } catch (HttpClientErrorException e) {
-
             System.out.println("LinkedIn Image Publish Error Status: " + e.getStatusCode());
             System.out.println("LinkedIn Image Publish Error Body: " + e.getResponseBodyAsString());
 
             return ResponseEntity.status(e.getStatusCode()).body(e.getResponseBodyAsString());
 
         } catch (Exception e) {
-
             e.printStackTrace();
 
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
