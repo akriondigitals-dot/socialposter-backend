@@ -35,12 +35,16 @@ public class FacebookController {
     @GetMapping("/api/facebook/connect")
     public void connectFacebook(HttpServletResponse response) throws IOException {
 
-        String scope = "pages_show_list,pages_read_engagement,pages_manage_posts";
+        String scope =
+                "pages_show_list,pages_read_engagement,pages_manage_posts";
 
-        String url = "https://www.facebook.com/v19.0/dialog/oauth"
-                + "?client_id=" + appId
-                + "&redirect_uri=" + URLEncoder.encode(redirectUri, StandardCharsets.UTF_8)
-                + "&scope=" + URLEncoder.encode(scope, StandardCharsets.UTF_8);
+        String url =
+                "https://www.facebook.com/v19.0/dialog/oauth"
+                        + "?client_id=" + appId
+                        + "&redirect_uri="
+                        + URLEncoder.encode(redirectUri, StandardCharsets.UTF_8)
+                        + "&scope="
+                        + URLEncoder.encode(scope, StandardCharsets.UTF_8);
 
         response.sendRedirect(url);
     }
@@ -62,40 +66,58 @@ public class FacebookController {
     @ResponseBody
     @GetMapping("/api/facebook/pages")
     public ResponseEntity<?> getPages() {
+
         if (userAccessToken == null) {
-            return ResponseEntity.badRequest().body("Facebook is not connected yet");
+            return ResponseEntity
+                    .badRequest()
+                    .body("Facebook is not connected yet");
         }
 
-        String url = "https://graph.facebook.com/v19.0/me/accounts"
-                + "?access_token=" + userAccessToken;
+        String url =
+                "https://graph.facebook.com/v19.0/me/accounts"
+                        + "?access_token=" + userAccessToken;
 
         RestTemplate restTemplate = new RestTemplate();
-        ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
+
+        ResponseEntity<Map> response =
+                restTemplate.getForEntity(url, Map.class);
 
         return ResponseEntity.ok(response.getBody());
     }
 
     @ResponseBody
     @PostMapping("/api/facebook/publish")
-    public ResponseEntity<String> publishToFacebook(@RequestBody Map<String, String> request) {
+    public ResponseEntity<String> publishToFacebook(
+            @RequestBody Map<String, String> request) {
 
         try {
+
             if (pageAccessToken == null || pageId == null) {
-                return ResponseEntity.badRequest().body("Facebook Page is not connected yet");
+                return ResponseEntity
+                        .badRequest()
+                        .body("Facebook Page is not connected yet");
             }
 
             String content = request.get("content");
 
             if (content == null || content.trim().isEmpty()) {
-                return ResponseEntity.badRequest().body("Post content is required");
+                return ResponseEntity
+                        .badRequest()
+                        .body("Post content is required");
             }
 
-            String url = "https://graph.facebook.com/v19.0/" + pageId + "/feed";
+            String url =
+                    "https://graph.facebook.com/v19.0/"
+                            + pageId
+                            + "/feed";
 
             HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+            headers.setContentType(
+                    MediaType.APPLICATION_FORM_URLENCODED);
 
-            MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
+            MultiValueMap<String, String> formData =
+                    new LinkedMultiValueMap<>();
+
             formData.add("message", content);
             formData.add("access_token", pageAccessToken);
 
@@ -105,14 +127,22 @@ public class FacebookController {
             RestTemplate restTemplate = new RestTemplate();
 
             ResponseEntity<Map> response =
-                    restTemplate.postForEntity(url, entity, Map.class);
+                    restTemplate.postForEntity(
+                            url,
+                            entity,
+                            Map.class);
 
-            System.out.println("Facebook Publish Response: " + response.getBody());
+            System.out.println(
+                    "Facebook Publish Response: "
+                            + response.getBody());
 
-            return ResponseEntity.ok("Posted to Facebook successfully");
+            return ResponseEntity.ok(
+                    "Posted to Facebook successfully");
 
         } catch (Exception e) {
+
             e.printStackTrace();
+
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(e.getMessage());
@@ -121,26 +151,36 @@ public class FacebookController {
 
     private void exchangeCodeForUserToken(String code) {
 
-        String url = "https://graph.facebook.com/v19.0/oauth/access_token"
-                + "?client_id=" + appId
-                + "&redirect_uri=" + URLEncoder.encode(redirectUri, StandardCharsets.UTF_8)
-                + "&client_secret=" + appSecret
-                + "&code=" + code;
+        String url =
+                "https://graph.facebook.com/v19.0/oauth/access_token"
+                        + "?client_id=" + appId
+                        + "&redirect_uri="
+                        + URLEncoder.encode(
+                        redirectUri,
+                        StandardCharsets.UTF_8)
+                        + "&client_secret=" + appSecret
+                        + "&code=" + code;
 
         RestTemplate restTemplate = new RestTemplate();
 
         ResponseEntity<Map> response =
                 restTemplate.getForEntity(url, Map.class);
 
-        userAccessToken = response.getBody().get("access_token").toString();
+        userAccessToken =
+                response.getBody()
+                        .get("access_token")
+                        .toString();
 
-        System.out.println("Facebook User Access Token: " + userAccessToken);
+        System.out.println(
+                "Facebook User Access Token: "
+                        + userAccessToken);
     }
 
     private void fetchFirstFacebookPage() {
 
-        String url = "https://graph.facebook.com/v19.0/me/accounts"
-                + "?access_token=" + userAccessToken;
+        String url =
+                "https://graph.facebook.com/v19.0/me/accounts"
+                        + "?access_token=" + userAccessToken;
 
         RestTemplate restTemplate = new RestTemplate();
 
@@ -148,16 +188,19 @@ public class FacebookController {
                 restTemplate.getForEntity(url, Map.class);
 
         List<Map<String, Object>> pages =
-                (List<Map<String, Object>>) response.getBody().get("data");
+                (List<Map<String, Object>>)
+                        response.getBody().get("data");
 
         if (pages == null || pages.isEmpty()) {
-            throw new RuntimeException("No Facebook Pages found for this user");
+            throw new RuntimeException(
+                    "No Facebook Pages found for this user");
         }
 
         Map<String, Object> firstPage = pages.get(0);
 
         pageId = firstPage.get("id").toString();
         pageName = firstPage.get("name").toString();
-        pageAccessToken = firstPage.get("access_token").toString();
+        pageAccessToken =
+                firstPage.get("access_token").toString();
     }
 }
