@@ -58,6 +58,7 @@ public class LinkedInController {
         if (error != null) {
             System.out.println("LinkedIn OAuth Error: " + error);
             System.out.println("LinkedIn OAuth Error Description: " + errorDescription);
+
             response.sendError(
                     HttpServletResponse.SC_BAD_REQUEST,
                     "LinkedIn OAuth error: " + error + " - " + errorDescription
@@ -79,10 +80,12 @@ public class LinkedInController {
             exchangeCodeForAccessToken(code);
             fetchLinkedInUserId();
 
-            response.sendRedirect("akrion://linkedin-success");
+            // Temporary browser test redirect
+            response.sendRedirect("https://socialposter-backend.onrender.com/api/posts");
 
         } catch (Exception e) {
             e.printStackTrace();
+
             response.sendError(
                     HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     "LinkedIn connection failed: " + e.getMessage()
@@ -366,6 +369,8 @@ public class LinkedInController {
                         request,
                         Map.class
                 );
+
+        System.out.println("LinkedIn UserInfo Response: " + response.getBody());
 
         linkedInUserId = response.getBody().get("sub").toString();
 
